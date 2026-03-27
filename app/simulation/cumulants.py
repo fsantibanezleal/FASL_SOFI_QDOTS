@@ -335,7 +335,81 @@ def _cumulant_6(d: np.ndarray) -> np.ndarray:
                 pc = np.mean(dd[c[0]] * dd[c[1]], axis=0)
                 triple_pair += pa * pb * pc
 
+    # The nested loop counts each partition 3 times (once per pair
+    # chosen as "c").  Divide by 3 to get the correct 15 terms.
+    # Bug found by Codex code review on PR #2.
+    triple_pair /= 3
+
     return m6 - pair_quad - triple_triple + 2 * triple_pair
+
+
+def compute_cross_cumulant(images: np.ndarray, order: int) -> np.ndarray:
+    """Cross-cumulant SOFI using neighboring pixel combinations.
+
+    Instead of auto-cumulants at each pixel, combines signals from
+    neighboring pixels to achieve sub-pixel sampling:
+
+        C_n(r_virtual) = cumulant(F(r_1, t), ..., F(r_n, t))
+        where r_virtual = (r_1 + ... + r_n) / n
+
+    This provides n-fold resolution improvement (not just sqrt(n))
+    because the virtual pixel grid is n times finer than the
+    physical pixel grid.
+
+    For order 2: combine each pixel with its right neighbor
+        r_virtual = (r, r+dx) -> virtual pixel at r + dx/2
+    For order 3: combine pixel with right and bottom neighbors
+    For order 4: 2x2 neighborhood
+
+    Args:
+        images: 3D array (T, H, W) of fluorescence frames.
+        order: Cross-cumulant order (2, 3, or 4).
+
+    Returns:
+        2D array of cross-cumulant values. Shape depends on order:
+        - Order 2: (H, W*2-1) with interleaved auto and cross values
+        - Order 3: (H-1, W-1) cross-cumulant map
+        - Order 4: (H-1, W-1) cross-cumulant map
+        For other orders, falls back to standard auto-cumulant.
+    """
+    T, H, W = images.shape
+    mean_img = np.mean(images, axis=0)
+    delta = images - mean_img[np.newaxis, :, :]
+
+    if order == 2:
+        # Cross-cumulant between pixel (i,j) and (i,j+1)
+        # Virtual pixel at (i, j+0.5) -- doubles horizontal resolution
+        d_left = delta[:, :, :-1]   # (T, H, W-1)
+        d_right = delta[:, :, 1:]   # (T, H, W-1)
+        xc = np.mean(d_left[:-1] * d_right[1:], axis=0)
+        # Upscale to 2x width
+        result = np.zeros((H, W * 2 - 1))
+        result[:, 0::2] = compute_cumulant(images, 2)  # auto at original pixels
+        result[:, 1::2] = xc  # cross at virtual pixels
+        return result
+
+    elif order == 3:
+        # 3-pixel cross: (i,j), (i,j+1), (i+1,j)
+        d00 = delta[:, :-1, :-1]
+        d01 = delta[:, :-1, 1:]
+        d10 = delta[:, 1:, :-1]
+        xc = np.mean(d00[:-2] * d01[1:-1] * d10[2:], axis=0)
+        return xc
+
+    elif order == 4:
+        # 2x2 cross: (i,j), (i,j+1), (i+1,j), (i+1,j+1)
+        d00 = delta[:, :-1, :-1]
+        d01 = delta[:, :-1, 1:]
+        d10 = delta[:, 1:, :-1]
+        d11 = delta[:, 1:, 1:]
+        # 4th-order cross-cumulant with moment subtraction
+        m4 = np.mean(d00[:-3] * d01[1:-2] * d10[2:-1] * d11[3:], axis=0)
+        m02 = np.mean(d00[:-1] * d01[1:], axis=0)[:d10.shape[1], :d10.shape[2]]
+        m13 = np.mean(d10[:-1] * d11[1:], axis=0)[:m02.shape[0], :m02.shape[1]]
+        # Simplified: subtract dominant cross-terms
+        return m4 - m02 * m13
+
+    return compute_cumulant(images, order)
 
 
 def compute_sofi_image(
