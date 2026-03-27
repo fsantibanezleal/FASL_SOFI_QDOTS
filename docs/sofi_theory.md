@@ -386,7 +386,212 @@ Cumulant computation is embarrassingly parallel across pixels. GPU implementatio
 
 ---
 
-## 13. References
+## 13. Cumulant vs Moment: Why Cumulants?
+
+### 13.1 The Problem with Moments
+
+The nth-order moment of a sum of signals includes contributions from all possible products of lower-order correlations. For example, the 4th moment M_4 of a fluorescence signal from N independent emitters contains:
+
+```
+M_4[F] = Sum_k eps_k^4 * <s_k^4> * U^4(r - r_k)       [genuine 4th-order terms]
+       + Sum_{j!=k} eps_j^2 * eps_k^2 * <s_j^2><s_k^2> * U^2(r-r_j)*U^2(r-r_k)  [cross-terms]
+       + ... [other mixed products]
+```
+
+The cross-terms do not contribute to resolution improvement because they involve products of U^2, not U^4. They represent correlations that arise simply because emitters are present simultaneously, not because of genuine 4-point temporal correlations.
+
+### 13.2 Cumulant Subtraction
+
+Cumulants systematically remove these lower-order contributions:
+
+```
+K_n = M_n - Sum(products of lower cumulants following partition formula)
+```
+
+Specifically:
+```
+K_1 = M_1
+K_2 = M_2 - M_1^2
+K_3 = M_3 - 3*M_2*M_1 + 2*M_1^3
+K_4 = M_4 - 4*M_3*M_1 - 3*M_2^2 + 12*M_2*M_1^2 - 6*M_1^4
+```
+
+The general formula uses the Mobius function on the partition lattice:
+
+```
+K_n = Sum_{pi in P(n)} (-1)^{|pi|-1} * (|pi|-1)! * Product_{B in pi} M_{|B|}
+```
+
+where P(n) is the set of all partitions of {1,...,n}.
+
+### 13.3 Why This Matters for SOFI
+
+Because emitters blink independently, cross-terms between different emitters vanish in the cumulant:
+
+```
+K_n[s_j + s_k] = K_n[s_j] + K_n[s_k]    (additivity for independent variables)
+```
+
+This means only genuine n-point correlations from individual emitters survive, ensuring that the PSF appears as U^n rather than a mixture of lower powers. Without cumulants, the resolution improvement would be contaminated by lower-order contributions.
+
+![Cumulant vs Moment](svg/cumulant_vs_moment.svg)
+
+---
+
+## 14. Cross-Cumulant SOFI (Extended)
+
+### 14.1 Beyond Auto-Cumulants
+
+Standard SOFI computes auto-cumulants at a single pixel position r. Cross-cumulant SOFI generalizes this by computing cumulants between signals at different pixel positions:
+
+```
+C_n(r_1, r_2, ..., r_n) = kappa_n[F(r_1, t), F(r_2, t+tau_1), ..., F(r_n, t+tau_{n-1})]
+```
+
+Due to emitter independence, this simplifies to:
+
+```
+C_n(r_1,...,r_n) = Sum_k eps_k^n * kappa_n[s_k] * U(r_1 - r_k) * U(r_2 - r_k) * ... * U(r_n - r_k)
+```
+
+### 14.2 Virtual Pixel Positions
+
+The key insight is that the product U(r_1 - r_k) * ... * U(r_n - r_k) is maximized when r_k is at the centroid of the pixel positions:
+
+```
+r_virtual = (r_1 + r_2 + ... + r_n) / n
+```
+
+By choosing different pixel combinations, the virtual pixel positions form a sub-pixel grid. For order n with combinations of n neighboring pixels:
+
+- **Order 2**: Combinations of 2 pixels produce virtual positions at half-pixel offsets, giving 2x pixel density
+- **Order 3**: Combinations of 3 pixels produce 3x pixel density
+- **Order n**: n-fold pixel density increase
+
+This sub-pixel sampling is essential because the narrowed PSF (sigma/sqrt(n)) would otherwise be under-sampled by the original pixel grid, violating the Nyquist criterion.
+
+### 14.3 Practical Pixel Combinations
+
+For a 2D pixel grid, the combinations for 2nd-order cross-cumulants include:
+- (i, j) and (i+1, j): horizontal pair, virtual position at (i+0.5, j)
+- (i, j) and (i, j+1): vertical pair, virtual position at (i, j+0.5)
+- (i, j) and (i+1, j+1): diagonal pair, virtual position at (i+0.5, j+0.5)
+
+This produces a 2x2 sub-pixel grid per original pixel, achieving 4x more sampling points.
+
+---
+
+## 15. Balanced SOFI (bSOFI) -- Detailed Theory
+
+### 15.1 The Nonlinearity Problem
+
+Higher-order cumulants scale as eps^n, creating extreme brightness nonlinearity. Additionally, odd-order cumulants can be negative (when the on-time probability p < 0.5 for 3rd order), producing cusp artifacts at emitter positions.
+
+### 15.2 Geissbuehler's Balance Factor
+
+Geissbuehler et al. (2012) proposed extracting molecular parameters from the ratio of cumulant orders. The balance factor is defined as:
+
+```
+b_n = (K_n / K_2^{n/2})^{1/(n-2)}
+```
+
+For a two-state system with on-probability p:
+```
+b_n = [kappa_n(p) / kappa_2(p)^{n/2}]^{1/(n-2)}
+```
+
+### 15.3 Physical Interpretation
+
+The balance factor b_n is a function only of the on-time ratio p (not brightness eps), because the eps dependence cancels in the ratio K_n / K_2^{n/2}. This means bSOFI can:
+
+1. **Linearize brightness**: The eps^n dependence is removed, restoring linear contrast
+2. **Extract on-time ratio**: b_n is a monotonic function of p, so it maps to the molecular duty cycle
+3. **Remove cusp artifacts**: The absolute value and fractional exponent smooth out sign changes in odd-order cumulants
+
+### 15.4 Multiple Order Combination
+
+By computing b_n at multiple orders (n = 3, 4, 5, 6), one obtains multiple independent estimates of p at each pixel, which can be averaged for robustness. The resolution of the b_n image corresponds to the highest cumulant order used.
+
+---
+
+## 16. Temporal vs Spatial Resolution Trade-off
+
+### 16.1 The Fundamental Trade-off
+
+SOFI requires temporal fluctuations for analysis. More frames improve SNR but reduce temporal resolution. The relationship is governed by:
+
+```
+SNR_n ~ sqrt(T / tau_c) * (eps / noise)^n
+```
+
+where T is the total acquisition time and tau_c is the blinking correlation time.
+
+### 16.2 Cramer-Rao Lower Bound
+
+The minimum achievable localization precision for SOFI is bounded by the Cramer-Rao lower bound (CRLB):
+
+```
+sigma_min = sigma_PSF / sqrt(n * (T / tau_c))
+```
+
+where:
+- sigma_PSF is the PSF standard deviation (~100 nm for typical setups)
+- n is the cumulant order
+- T / tau_c is the number of independent blinking cycles captured
+
+This shows that resolution improves with both cumulant order and acquisition time, but with diminishing returns (square root dependence on T).
+
+### 16.3 Practical Guidelines
+
+| Application | Frames | Temporal Resolution | Achievable SOFI Order |
+|-------------|--------|--------------------|-----------------------|
+| Fast live-cell dynamics | 100-300 | ~1-3 s at 100 fps | 2nd order |
+| Standard live imaging | 500-2000 | ~5-20 s at 100 fps | 2nd-3rd order |
+| Fixed samples | 5000-30000 | N/A | Up to 6th order |
+| QDot characterization | 10000+ | N/A | Up to 6th order |
+
+The optimal strategy depends on whether temporal or spatial resolution is prioritized for the biological question at hand.
+
+---
+
+## 17. Detailed Comparison: SOFI vs PALM/STORM
+
+### 17.1 Fundamental Differences
+
+![SOFI vs PALM/STORM](svg/sofi_vs_palm.svg)
+
+| Feature | SOFI | PALM/STORM |
+|---------|------|------------|
+| **Principle** | Statistical cumulant analysis | Single-molecule localization |
+| **Frame count** | ~100-1000 (low orders) | ~10000-50000 |
+| **Labeling density** | High (many emitters per PSF) | Low (sparse activation required) |
+| **Activation control** | None needed (spontaneous blinking) | Precise photoswitching protocol |
+| **Resolution gain** | sqrt(n)x (~1.4-2.5x for orders 2-6) | Unlimited in principle (~20 nm) |
+| **Temporal resolution** | Seconds (fast) | Minutes to hours (slow) |
+| **Probe requirements** | Any blinking fluorophore | Photoswitchable probes (PA-GFP, Alexa647, etc.) |
+| **Live-cell compatibility** | Excellent | Limited (phototoxicity, slow) |
+| **Computational cost** | Low (pixel-wise statistics) | High (single-molecule fitting) |
+| **Background sensitivity** | Robust (cumulants reject constant bg) | Sensitive (bg reduces localization precision) |
+| **Bleaching tolerance** | High (statistical analysis survives partial bleaching) | Low (need many switching cycles) |
+
+### 17.2 When to Choose Each
+
+**Choose SOFI when:**
+- Live-cell imaging with fast dynamics
+- Dense labeling is unavoidable
+- Moderate resolution improvement (1.5-2.5x) is sufficient
+- Quantum dots or non-switchable fluorophores are used
+- Fast acquisition is prioritized over maximum resolution
+
+**Choose PALM/STORM when:**
+- Maximum resolution is critical (<50 nm)
+- Fixed samples allow long acquisition
+- Photoswitchable probes are available
+- Single-molecule statistics are needed (stoichiometry, kinetics)
+
+---
+
+## 18. References
 
 1. Dertinger, T., et al. (2009). "Fast, background-free, 3D super-resolution optical fluctuation imaging (SOFI)." *PNAS* 106(52):22287-22292.
 
