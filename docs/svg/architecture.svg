@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="400" fill="url(#grad1)"/>
+
+  <!-- Frontend Box -->
+  <rect x="30" y="30" width="250" height="160" rx="10" fill="#0d1117" stroke="#00d4aa" stroke-width="2"/>
+  <text x="155" y="60" text-anchor="middle" fill="#00d4aa" font-family="monospace" font-size="14" font-weight="bold">Frontend</text>
+  <text x="155" y="85" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">HTML5 / CSS / Canvas</text>
+  <line x1="50" y1="95" x2="260" y2="95" stroke="#30363d" stroke-width="1"/>
+  <text x="50" y="115" fill="#e6edf3" font-family="monospace" font-size="10">- Image rendering</text>
+  <text x="50" y="132" fill="#e6edf3" font-family="monospace" font-size="10">- Colormap support</text>
+  <text x="50" y="149" fill="#e6edf3" font-family="monospace" font-size="10">- Parameter controls</text>
+  <text x="50" y="166" fill="#e6edf3" font-family="monospace" font-size="10">- WebSocket progress</text>
+
+  <!-- Arrow -->
+  <line x1="280" y1="110" x2="340" y2="110" stroke="#00d4aa" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="310" y="100" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">HTTP</text>
+  <text x="310" y="130" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">WS</text>
+
+  <!-- Backend Box -->
+  <rect x="340" y="30" width="250" height="160" rx="10" fill="#0d1117" stroke="#3fb950" stroke-width="2"/>
+  <text x="465" y="60" text-anchor="middle" fill="#3fb950" font-family="monospace" font-size="14" font-weight="bold">FastAPI Backend</text>
+  <text x="465" y="85" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">Port 8007</text>
+  <line x1="360" y1="95" x2="570" y2="95" stroke="#30363d" stroke-width="1"/>
+  <text x="360" y="115" fill="#e6edf3" font-family="monospace" font-size="10">POST /api/simulate</text>
+  <text x="360" y="132" fill="#e6edf3" font-family="monospace" font-size="10">POST /api/process</text>
+  <text x="360" y="149" fill="#e6edf3" font-family="monospace" font-size="10">GET  /api/state</text>
+  <text x="360" y="166" fill="#e6edf3" font-family="monospace" font-size="10">WS   /ws</text>
+
+  <!-- Arrow down -->
+  <line x1="465" y1="190" x2="465" y2="230" stroke="#3fb950" stroke-width="2"/>
+  <polygon points="465,240 459,230 471,230" fill="#3fb950"/>
+
+  <!-- Engine Box -->
+  <rect x="310" y="240" width="560" height="140" rx="10" fill="#0d1117" stroke="#d29922" stroke-width="2"/>
+  <text x="590" y="265" text-anchor="middle" fill="#d29922" font-family="monospace" font-size="14" font-weight="bold">Simulation Engine</text>
+
+  <!-- Module boxes -->
+  <rect x="325" y="280" width="160" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="405" y="300" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">cumulants.py</text>
+
+  <rect x="500" y="280" width="160" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="580" y="300" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">emitter_simulator.py</text>
+
+  <rect x="690" y="280" width="160" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="770" y="300" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">psf.py</text>
+
+  <rect x="325" y="320" width="160" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="405" y="340" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">deconvolution.py</text>
+
+  <rect x="500" y="320" width="160" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="580" y="340" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">fourier_interp.py</text>
+
+  <rect x="690" y="320" width="160" height="30" rx="5" fill="#21262d" stroke="#30363d"/>
+  <text x="770" y="340" text-anchor="middle" fill="#58a6ff" font-family="monospace" font-size="10">sofi_pipeline.py</text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00d4aa"/>
+    </marker>
+  </defs>
+</svg>

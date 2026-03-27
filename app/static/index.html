@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FASL SOFI QDOTS - Super-resolution Optical Fluctuation Imaging</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header>
+    <h1>SOFI QDOTS <span>Super-resolution Optical Fluctuation Imaging</span></h1>
+    <div class="header-actions">
+        <span><span class="status-dot" id="status-dot"></span>WS</span>
+        <button class="btn" id="btn-help">Help</button>
+    </div>
+</header>
+
+<div class="app-container">
+    <!-- LEFT: Image Display -->
+    <div class="image-panel">
+        <div class="image-grid" id="image-grid">
+            <div class="empty-state" id="empty-state">
+                <div class="icon">&#x1F52C;</div>
+                <p>No data loaded.<br>Use the controls on the right to simulate or load data.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Controls -->
+    <div class="control-panel">
+        <!-- Simulation Parameters -->
+        <div class="control-section">
+            <h3>Simulation</h3>
+            <div class="section-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="num-frames">Frames</label>
+                        <input type="number" id="num-frames" value="500" min="50" max="5000" step="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="image-size">Image Size</label>
+                        <input type="number" id="image-size" value="64" min="16" max="256" step="8">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="num-emitters">Emitters</label>
+                        <input type="number" id="num-emitters" value="20" min="1" max="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="psf-sigma">PSF Sigma (px)</label>
+                        <input type="number" id="psf-sigma" value="2.0" min="0.5" max="10" step="0.1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="brightness">Brightness</label>
+                        <input type="number" id="brightness" value="1000" min="100" max="10000" step="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="background">Background</label>
+                        <input type="number" id="background" value="100" min="0" max="1000" step="10">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="noise-std">Noise Std</label>
+                        <input type="number" id="noise-std" value="20" min="0" max="200" step="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="seed">Seed (opt.)</label>
+                        <input type="number" id="seed" value="" placeholder="random">
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btn-simulate" style="width:100%">Simulate</button>
+            </div>
+        </div>
+
+        <!-- Processing Parameters -->
+        <div class="control-section">
+            <h3>SOFI Processing</h3>
+            <div class="section-body">
+                <div class="form-group">
+                    <label>Cumulant Orders</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" class="order-checkbox" value="2" checked> C2</label>
+                        <label><input type="checkbox" class="order-checkbox" value="3" checked> C3</label>
+                        <label><input type="checkbox" class="order-checkbox" value="4" checked> C4</label>
+                        <label><input type="checkbox" class="order-checkbox" value="5"> C5</label>
+                        <label><input type="checkbox" class="order-checkbox" value="6"> C6</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="window-size">Window Size</label>
+                        <input type="number" id="window-size" value="100" min="10" max="2000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="deconv-method">Deconvolution</label>
+                        <select id="deconv-method">
+                            <option value="none">None</option>
+                            <option value="wiener">Wiener</option>
+                            <option value="richardson_lucy">Richardson-Lucy</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="linearize" checked> Linearize</label>
+                    <label><input type="checkbox" id="use-fourier"> Fourier Interp.</label>
+                </div>
+                <button class="btn btn-primary" id="btn-process" disabled style="width:100%">Process SOFI</button>
+            </div>
+        </div>
+
+        <!-- Display Options -->
+        <div class="control-section">
+            <h3>Display</h3>
+            <div class="section-body">
+                <div class="form-group">
+                    <label>Colormap</label>
+                    <div class="colormap-select">
+                        <button class="colormap-btn active" data-cmap="hot">Hot</button>
+                        <button class="colormap-btn" data-cmap="viridis">Viridis</button>
+                        <button class="colormap-btn" data-cmap="grayscale">Gray</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+            <div class="progress-text" id="progress-text">Ready</div>
+        </div>
+
+        <!-- Log -->
+        <div class="control-section">
+            <h3>Log</h3>
+            <div class="section-body" style="padding: 0;">
+                <div class="log-area" id="log-area"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+        <button class="close-btn" id="modal-close">&times;</button>
+        <h2>SOFI Theory</h2>
+        <p>
+            Super-resolution Optical Fluctuation Imaging (SOFI) extracts
+            sub-diffraction spatial information from temporal fluorescence
+            fluctuations of independently blinking emitters (quantum dots).
+        </p>
+
+        <h3>Key Principle</h3>
+        <p>
+            The fluorescence signal at pixel <code>r</code> is:
+            <code>F(r,t) = Sum_k eps_k * s_k(t) * U(r - r_k)</code>
+        </p>
+        <p>
+            The nth-order cumulant of intensity fluctuations yields an image
+            where the PSF is raised to the nth power:
+            <code>C_n(r) = Sum_k eps_k^n * kappa_n[s_k] * U^n(r - r_k)</code>
+        </p>
+        <p>
+            Since <code>U^n</code> is narrower than <code>U</code>, the effective
+            resolution improves by a factor of <code>sqrt(n)</code>.
+        </p>
+
+        <h3>Resolution Improvement</h3>
+        <table>
+            <tr><th>Order</th><th>PSF</th><th>Resolution Gain</th></tr>
+            <tr><td>2</td><td>U^2(r)</td><td>1.41x</td></tr>
+            <tr><td>3</td><td>U^3(r)</td><td>1.73x</td></tr>
+            <tr><td>4</td><td>U^4(r)</td><td>2.00x</td></tr>
+            <tr><td>5</td><td>U^5(r)</td><td>2.24x</td></tr>
+            <tr><td>6</td><td>U^6(r)</td><td>2.45x</td></tr>
+        </table>
+
+        <h3>Cumulant Computation</h3>
+        <p>
+            For zero-mean fluctuations <code>dF = F - &lt;F&gt;</code> with
+            consecutive time lags:
+        </p>
+        <ul>
+            <li><strong>C2:</strong> <code>&lt;dF(t)*dF(t+1)&gt;</code> (auto-covariance)</li>
+            <li><strong>C3:</strong> <code>&lt;dF(t)*dF(t+1)*dF(t+2)&gt;</code> (3rd central moment)</li>
+            <li><strong>C4:</strong> 4th moment minus products of 2nd moments (3 terms)</li>
+            <li><strong>C5:</strong> 5th moment minus pair-triple products (10 terms)</li>
+            <li><strong>C6:</strong> 6th moment minus pair-quartet, triple-triple, plus pair-pair-pair terms</li>
+        </ul>
+
+        <h3>Quantum Dot Blinking</h3>
+        <p>
+            QDots exhibit power-law distributed on/off times:
+            <code>P(t) ~ t^(-alpha)</code> with <code>alpha ~ 1.5</code>.
+            This stochastic blinking provides the temporal fluctuations
+            that SOFI requires.
+        </p>
+
+        <h3>Linearization</h3>
+        <p>
+            The nth-order cumulant scales as brightness^n, creating extreme
+            contrast. Taking the nth root <code>|C_n|^(1/n)</code> restores
+            linear brightness scaling.
+        </p>
+    </div>
+</div>
+
+<script src="/static/js/websocket.js"></script>
+<script src="/static/js/renderer.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

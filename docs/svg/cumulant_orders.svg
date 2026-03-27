@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="bgG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#161b22;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bgG)"/>
+
+  <text x="400" y="30" text-anchor="middle" fill="#00d4aa" font-family="monospace" font-size="16" font-weight="bold">PSF Narrowing by Cumulant Order</text>
+  <text x="400" y="50" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">sigma_eff = sigma / sqrt(n)</text>
+
+  <!-- Axes -->
+  <line x1="80" y1="400" x2="750" y2="400" stroke="#30363d" stroke-width="1"/>
+  <line x1="80" y1="70" x2="80" y2="400" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="440" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">Position (pixels)</text>
+  <text x="30" y="240" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11" transform="rotate(-90, 30, 240)">Intensity</text>
+
+  <!-- X-axis labels -->
+  <text x="80" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">-15</text>
+  <text x="190" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">-10</text>
+  <text x="300" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">-5</text>
+  <text x="415" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">0</text>
+  <text x="530" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">5</text>
+  <text x="640" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">10</text>
+  <text x="750" y="420" text-anchor="middle" fill="#484f58" font-family="monospace" font-size="9">15</text>
+
+  <!-- Gaussian profiles: wider = lower order -->
+  <!-- Order 1 (Widefield): sigma=5, very wide -->
+  <path d="M 80,398 Q 120,395 160,385 Q 200,360 250,310 Q 300,220 340,135 Q 370,90 415,75 Q 460,90 490,135 Q 540,220 590,310 Q 640,360 680,385 Q 720,395 750,398" fill="none" stroke="#484f58" stroke-width="2" stroke-dasharray="6,4"/>
+
+  <!-- Order 2: sigma=5/sqrt(2)=3.54 -->
+  <path d="M 150,398 Q 190,395 220,385 Q 260,350 300,280 Q 340,180 370,115 Q 395,85 415,75 Q 435,85 460,115 Q 490,180 530,280 Q 570,350 610,385 Q 640,395 680,398" fill="none" stroke="#58a6ff" stroke-width="2.5"/>
+
+  <!-- Order 3: sigma=5/sqrt(3)=2.89 -->
+  <path d="M 180,398 Q 220,395 260,378 Q 300,330 335,240 Q 360,155 385,100 Q 400,82 415,75 Q 430,82 445,100 Q 470,155 495,240 Q 530,330 570,378 Q 610,395 650,398" fill="none" stroke="#3fb950" stroke-width="2.5"/>
+
+  <!-- Order 4: sigma=5/sqrt(4)=2.5 -->
+  <path d="M 210,398 Q 250,395 285,372 Q 320,310 355,210 Q 375,140 395,95 Q 405,80 415,75 Q 425,80 435,95 Q 455,140 475,210 Q 510,310 545,372 Q 580,395 620,398" fill="none" stroke="#d29922" stroke-width="2.5"/>
+
+  <!-- Order 5: sigma=5/sqrt(5)=2.24 -->
+  <path d="M 230,398 Q 270,395 300,368 Q 335,295 365,195 Q 385,130 400,92 Q 408,80 415,75 Q 422,80 430,92 Q 445,130 465,195 Q 495,295 530,368 Q 560,395 600,398" fill="none" stroke="#f85149" stroke-width="2.5"/>
+
+  <!-- Order 6: sigma=5/sqrt(6)=2.04 -->
+  <path d="M 245,398 Q 280,395 310,365 Q 345,285 370,185 Q 390,120 405,90 Q 410,80 415,75 Q 420,80 425,90 Q 440,120 460,185 Q 485,285 520,365 Q 550,395 585,398" fill="none" stroke="#00d4aa" stroke-width="2.5"/>
+
+  <!-- Legend -->
+  <rect x="560" y="70" width="220" height="190" rx="8" fill="#0d1117" stroke="#30363d" opacity="0.9"/>
+
+  <line x1="575" y1="95" x2="610" y2="95" stroke="#484f58" stroke-width="2" stroke-dasharray="6,4"/>
+  <text x="620" y="99" fill="#484f58" font-family="monospace" font-size="10">Widefield (n=1)</text>
+
+  <line x1="575" y1="120" x2="610" y2="120" stroke="#58a6ff" stroke-width="2.5"/>
+  <text x="620" y="124" fill="#58a6ff" font-family="monospace" font-size="10">C2 (1.41x)</text>
+
+  <line x1="575" y1="145" x2="610" y2="145" stroke="#3fb950" stroke-width="2.5"/>
+  <text x="620" y="149" fill="#3fb950" font-family="monospace" font-size="10">C3 (1.73x)</text>
+
+  <line x1="575" y1="170" x2="610" y2="170" stroke="#d29922" stroke-width="2.5"/>
+  <text x="620" y="174" fill="#d29922" font-family="monospace" font-size="10">C4 (2.00x)</text>
+
+  <line x1="575" y1="195" x2="610" y2="195" stroke="#f85149" stroke-width="2.5"/>
+  <text x="620" y="199" fill="#f85149" font-family="monospace" font-size="10">C5 (2.24x)</text>
+
+  <line x1="575" y1="220" x2="610" y2="220" stroke="#00d4aa" stroke-width="2.5"/>
+  <text x="620" y="224" fill="#00d4aa" font-family="monospace" font-size="10">C6 (2.45x)</text>
+
+  <!-- FWHM annotations -->
+  <text x="400" y="470" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="10">Gaussian PSF: U^n(r) = exp(-n*r^2/(2*sigma^2)), FWHM_eff = FWHM/sqrt(n)</text>
+
+  <!-- Grid lines (subtle) -->
+  <line x1="415" y1="70" x2="415" y2="400" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,4"/>
+  <line x1="80" y1="75" x2="750" y2="75" stroke="#30363d" stroke-width="0.5" stroke-dasharray="2,4"/>
+</svg>
