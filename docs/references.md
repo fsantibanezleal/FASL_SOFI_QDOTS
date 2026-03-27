@@ -49,3 +49,15 @@
 19. **Wiener, N.** (1949). *Extrapolation, Interpolation, and Smoothing of Stationary Time Series*. MIT Press.
 
 20. **Zhang, B., Zerubia, J., & Bhler, J.C.** (2007). Gaussian approximations of fluorescence microscope point-spread function models. *Applied Optics*, 46(10), 1819-1829.
+
+## SOFI Simulation and Software
+
+21. **Deschout, H., Lukes, T., Lasser, T., & Bhlen, J.** (2016). Complementarity of PALM and SOFI for super-resolution live-cell imaging of focal adhesions. *Nature Communications*, 7, 13693.
+
+22. **Geissbuehler, S., Sharipov, A., Gober, A., et al.** (2014). Live-cell multiplane three-dimensional super-resolution optical fluctuation imaging. *Nature Communications*, 5, 5527.
+
+23. **Vandenberg, W., Leutenegger, M., Lasser, T., Radenovic, A., & Bhlen, J.** (2019). Diffraction-unlimited imaging: from fluorescence nanoscopy to SOFI. In *Fluorescence Microscopy: From Principles to Biological Applications* (2nd ed.), Wiley, pp. 543-574.
+
+24. **Stein, S.C., Huss, A., Hahnel, D., Gregor, I., & Enderlein, J.** (2015). Fourier interpolation stochastic optical fluctuation imaging (fSOFI). *Optics Express*, 23(12), 16154-16163.
+
+25. **Yi, X., Son, S., Bhlen, J., & Bhlen, J.** (2022). PySOFI: an open source Python package for SOFI. *Biomedical Optics Express*, 13(5), 2728-2740.
