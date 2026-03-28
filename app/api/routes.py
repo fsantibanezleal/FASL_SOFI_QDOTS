@@ -28,6 +28,7 @@ from ..simulation.emitter_simulator import simulate_blinking_sequence, generate_
 from ..simulation.sofi_pipeline import SOFIPipeline
 from ..simulation.cumulants import compute_sofi_image
 from ..simulation.tiff_loader import load_tiff_stack
+from ..simulation.mssr import compute_mssr, compute_temporal_mssr
 
 
 # --------------- Pydantic Models ---------------
@@ -54,6 +55,15 @@ class ProcessParams(BaseModel):
     deconvolution: str = Field("none", description="Deconvolution method")
     linearize: bool = Field(True, description="Apply nth-root linearization")
     psf_sigma: float = Field(2.0, ge=0.5, le=10.0, description="PSF sigma for deconvolution")
+
+
+class MSSRParams(BaseModel):
+    """Parameters for MSSR processing."""
+
+    mode: str = Field("single", description="'single' for single-frame MSSR, 'temporal' for temporal MSSR")
+    order: int = Field(1, ge=1, le=2, description="MSSR order (1 or 2)")
+    kernel_sigma: float = Field(1.0, ge=0.5, le=5.0, description="Gaussian kernel sigma for mean-shift")
+    frame_index: int = Field(0, ge=0, description="Frame index for single-frame mode")
 
 
 class StateResponse(BaseModel):
@@ -243,6 +253,69 @@ async def process(params: ProcessParams):
         "orders": params.orders,
         "elapsed_seconds": round(elapsed, 3),
         "results": results,
+    }
+
+
+@router.post("/api/process-mssr")
+async def process_mssr(params: MSSRParams):
+    """Run MSSR super-resolution processing on current data.
+
+    Supports single-frame MSSR (instant, from one frame) and
+    temporal MSSR (averaged across all frames for better SNR).
+
+    Returns the MSSR image as a base64-encoded float array.
+    """
+    if app_state.images is None:
+        raise HTTPException(status_code=400, detail="No image data loaded. Run /api/simulate first.")
+
+    start_time = time.time()
+    loop = asyncio.get_event_loop()
+
+    await app_state.broadcast({
+        "type": "progress",
+        "step": f"Computing MSSR ({params.mode}, order {params.order})...",
+        "progress": 0.0,
+    })
+
+    if params.mode == "single":
+        frame_idx = min(params.frame_index, app_state.images.shape[0] - 1)
+        mssr_img = await loop.run_in_executor(
+            None,
+            lambda: compute_mssr(
+                app_state.images[frame_idx],
+                order=params.order,
+                kernel_sigma=params.kernel_sigma,
+            ),
+        )
+    else:
+        mssr_img = await loop.run_in_executor(
+            None,
+            lambda: compute_temporal_mssr(
+                app_state.images,
+                order=params.order,
+                kernel_sigma=params.kernel_sigma,
+            ),
+        )
+
+    elapsed = time.time() - start_time
+
+    await app_state.broadcast({
+        "type": "progress",
+        "step": "MSSR processing complete",
+        "progress": 1.0,
+    })
+
+    return {
+        "status": "ok",
+        "mode": params.mode,
+        "order": params.order,
+        "elapsed_seconds": round(elapsed, 3),
+        "result": {
+            "image": _image_to_base64(mssr_img),
+            "shape": list(mssr_img.shape),
+            "min": float(mssr_img.min()),
+            "max": float(mssr_img.max()),
+        },
     }
 
 

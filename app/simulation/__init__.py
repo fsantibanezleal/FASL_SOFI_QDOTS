@@ -16,6 +16,7 @@ from .psf import gaussian_psf, airy_psf
 from .deconvolution import wiener_deconvolution, richardson_lucy
 from .fourier_interpolation import fourier_interpolate
 from .sofi_pipeline import SOFIPipeline
+from .mssr import compute_mssr, compute_temporal_mssr
 
 __all__ = [
     "compute_cumulant",
@@ -28,4 +29,6 @@ __all__ = [
     "richardson_lucy",
     "fourier_interpolate",
     "SOFIPipeline",
+    "compute_mssr",
+    "compute_temporal_mssr",
 ]
