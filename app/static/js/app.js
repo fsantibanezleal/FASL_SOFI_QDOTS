@@ -100,6 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Render mean image
                 renderImageCard('mean', 'Mean Image (Widefield)', data.mean_image, data.mean_shape[1], data.mean_shape[0]);
                 currentResults['mean'] = { image: data.mean_image, shape: data.mean_shape };
+
+                // Render ground truth image
+                if (data.ground_truth && document.getElementById('show-ground-truth').checked) {
+                    renderImageCard('ground-truth', 'Ground Truth (PSF-convolved)', data.ground_truth, data.ground_truth_shape[1], data.ground_truth_shape[0]);
+                    currentResults['ground-truth'] = { image: data.ground_truth, shape: data.ground_truth_shape };
+                }
             } else {
                 log('Simulation failed', 'error');
             }
