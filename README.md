@@ -10,6 +10,12 @@ The nth-order cumulant of the fluorescence signal narrows the effective point sp
 
 ![SOFI Pipeline](docs/svg/sofi_pipeline.svg)
 
+## Frontend
+
+![Frontend Base](docs/png/frontend_base.png)
+
+![Frontend Outputs](docs/png/frontend_outs.png)
+
 ## Quick Start
 
 ```bash
