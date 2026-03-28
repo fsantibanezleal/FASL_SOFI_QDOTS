@@ -291,3 +291,36 @@ def simulate_blinking_sequence(
         images[t] = frame
 
     return images, positions
+
+
+def generate_ground_truth(positions, image_size, psf_sigma, brightness=1000.0):
+    """Generate the ideal diffraction-limited image.
+
+    Places delta functions at each emitter position and convolves
+    with the PSF. This is the 'ground truth' that SOFI aims to recover.
+
+    Args:
+        positions: (N, 2) array of [y, x] emitter positions.
+        image_size: (H, W) tuple.
+        psf_sigma: PSF standard deviation in pixels.
+        brightness: Peak emitter brightness.
+
+    Returns:
+        2D array (H, W) normalized to [0, 1].
+    """
+    H, W = image_size
+    psf_size = int(6 * psf_sigma) | 1
+    psf = generate_gaussian_psf(psf_size, psf_sigma)
+    half = psf_size // 2
+
+    image = np.zeros((H, W), dtype=np.float64)
+    for i in range(len(positions)):
+        iy, ix = int(round(positions[i, 0])), int(round(positions[i, 1]))
+        y_start = max(0, iy - half); y_end = min(H, iy + half + 1)
+        x_start = max(0, ix - half); x_end = min(W, ix + half + 1)
+        py_start = y_start - (iy - half); py_end = psf_size - ((iy + half + 1) - y_end)
+        px_start = x_start - (ix - half); px_end = psf_size - ((ix + half + 1) - x_end)
+        image[y_start:y_end, x_start:x_end] += brightness * psf[py_start:py_end, px_start:px_end]
+
+    vmax = image.max()
+    return image / vmax if vmax > 0 else image
