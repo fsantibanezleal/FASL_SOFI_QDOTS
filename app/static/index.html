@@ -116,6 +116,38 @@
             </div>
         </div>
 
+        <!-- MSSR Processing -->
+        <div class="control-section">
+            <h3>MSSR Super-Resolution</h3>
+            <div class="section-body">
+                <div class="form-group">
+                    <label for="mssr-mode">Mode</label>
+                    <select id="mssr-mode">
+                        <option value="single">MSSR (single frame)</option>
+                        <option value="temporal">MSSR (temporal)</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mssr-order">Order</label>
+                        <select id="mssr-order">
+                            <option value="1">1 (standard)</option>
+                            <option value="2">2 (extra sharp)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mssr-sigma">Kernel Sigma</label>
+                        <input type="number" id="mssr-sigma" value="1.0" min="0.5" max="5.0" step="0.1">
+                    </div>
+                </div>
+                <div class="form-group" id="mssr-frame-group">
+                    <label for="mssr-frame">Frame Index</label>
+                    <input type="number" id="mssr-frame" value="0" min="0" step="1">
+                </div>
+                <button class="btn btn-primary" id="btn-mssr" disabled style="width:100%">Process MSSR</button>
+            </div>
+        </div>
+
         <!-- Display Options -->
         <div class="control-section">
             <h3>Display</h3>
@@ -216,5 +248,48 @@
 <script src="/static/js/websocket.js"></script>
 <script src="/static/js/renderer.js"></script>
 <script src="/static/js/app.js"></script>
+<script>
+(function () {
+    var btnMSSR = document.getElementById('btn-mssr');
+    var btnSimulate = document.getElementById('btn-simulate');
+    var mssrMode = document.getElementById('mssr-mode');
+    var mssrFrameGroup = document.getElementById('mssr-frame-group');
+
+    // Enable MSSR button when simulation data is available
+    if (btnSimulate) {
+        btnSimulate.addEventListener('click', function () {
+            setTimeout(function () { btnMSSR.disabled = false; }, 2000);
+        });
+    }
+
+    // Toggle frame index visibility based on mode
+    mssrMode.addEventListener('change', function () {
+        mssrFrameGroup.style.display = this.value === 'single' ? '' : 'none';
+    });
+
+    btnMSSR.addEventListener('click', function () {
+        btnMSSR.disabled = true;
+        var params = {
+            mode: mssrMode.value,
+            order: parseInt(document.getElementById('mssr-order').value),
+            kernel_sigma: parseFloat(document.getElementById('mssr-sigma').value),
+            frame_index: parseInt(document.getElementById('mssr-frame').value) || 0,
+        };
+        fetch('/api/process-mssr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            btnMSSR.disabled = false;
+            if (data.status === 'ok' && typeof window.displayResult === 'function') {
+                window.displayResult('MSSR (' + params.mode + ', order ' + params.order + ')', data.result);
+            }
+        })
+        .catch(function () { btnMSSR.disabled = false; });
+    });
+})();
+</script>
 </body>
 </html>
