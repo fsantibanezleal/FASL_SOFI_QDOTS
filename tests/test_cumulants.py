@@ -12,7 +12,7 @@ import numpy as np
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.simulation.cumulants import compute_cumulant, compute_sofi_image
+from app.simulation.cumulants import compute_cumulant, compute_sofi_image, compute_cross_cumulant, compute_bsofi
 
 
 def test_cumulant_2_constant_signal():
@@ -133,6 +133,52 @@ def test_cumulant_6_iid():
     print(f"  PASS: C6 of IID noise is near zero (max={np.abs(result).max():.3f})")
 
 
+def test_cross_cumulant_2():
+    """Cross-cumulant order 2 should produce wider image."""
+    images = np.random.randn(200, 16, 16).astype(np.float64) * 10 + 100
+    xc = compute_cross_cumulant(images, 2)
+    assert xc.shape[1] == 16 * 2 - 1, f"Expected width {16*2-1}, got {xc.shape[1]}"
+    print("  PASS: Cross-cumulant order 2 produces upsampled image")
+
+
+def test_cross_cumulant_3():
+    """Cross-cumulant order 3 should produce (H-1, W-1) image."""
+    images = np.random.randn(200, 16, 16).astype(np.float64) * 10 + 100
+    xc = compute_cross_cumulant(images, 3)
+    assert xc.shape == (15, 15), f"Expected (15, 15), got {xc.shape}"
+    print("  PASS: Cross-cumulant order 3 produces correct shape")
+
+
+def test_cross_cumulant_4():
+    """Cross-cumulant order 4 should produce (H-1, W-1) image."""
+    images = np.random.randn(200, 16, 16).astype(np.float64) * 10 + 100
+    xc = compute_cross_cumulant(images, 4)
+    assert xc.shape == (15, 15), f"Expected (15, 15), got {xc.shape}"
+    print("  PASS: Cross-cumulant order 4 produces correct shape")
+
+
+def test_bsofi():
+    """bSOFI should produce balanced image and molecular parameter maps."""
+    np.random.seed(42)
+    images = np.random.randn(300, 16, 16) * 10 + 100
+    result = compute_bsofi(images, max_order=4)
+    assert 'balanced' in result
+    assert 'on_ratio' in result
+    assert 'brightness' in result
+    assert 'cumulants' in result
+    assert result['balanced'].shape == (16, 16)
+    assert result['on_ratio'].shape == (16, 16)
+    assert result['brightness'].shape == (16, 16)
+    # Balanced image should be normalized to [0, 1]
+    assert result['balanced'].min() >= 0.0
+    assert result['balanced'].max() <= 1.0 + 1e-10
+    # Cumulants should contain orders 2, 3, 4
+    assert '2' in result['cumulants']
+    assert '3' in result['cumulants']
+    assert '4' in result['cumulants']
+    print("  PASS: bSOFI produces balanced image and parameter maps")
+
+
 if __name__ == "__main__":
     print("=== SOFI Cumulant Tests ===")
     test_cumulant_2_constant_signal()
@@ -145,4 +191,8 @@ if __name__ == "__main__":
     test_compute_sofi_image()
     test_cumulant_5_iid()
     test_cumulant_6_iid()
+    test_cross_cumulant_2()
+    test_cross_cumulant_3()
+    test_cross_cumulant_4()
+    test_bsofi()
     print("=== All cumulant tests passed ===")
