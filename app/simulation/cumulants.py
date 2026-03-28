@@ -420,6 +420,75 @@ def compute_cross_cumulant(images: np.ndarray, order: int) -> np.ndarray:
     return compute_cumulant(images, order)
 
 
+def compute_bsofi(images: np.ndarray, max_order: int = 4) -> dict:
+    """Balanced SOFI (Geissbuehler et al., 2012).
+
+    Extracts molecular parameters from multiple cumulant orders:
+    - On-time ratio: rho = tau_on / (tau_on + tau_off)
+    - Molecular brightness: epsilon
+    - Concentration map: N(r)
+
+    The balance factor linearizes brightness response:
+        b_n = (|K_n| / K_2^(n/2))^(1/(n-2))
+
+    The balanced image removes cusp artifacts from odd-order cumulants
+    and provides a linear relationship between image intensity and
+    emitter density.
+
+    Args:
+        images: (T, H, W) fluorescence stack.
+        max_order: Maximum cumulant order to compute (2-6).
+
+    Returns:
+        Dictionary with keys:
+        - 'cumulants': dict of order -> cumulant image
+        - 'balanced': the balanced SOFI image
+        - 'on_ratio': estimated on-time ratio map
+        - 'brightness': estimated brightness map
+    """
+    if max_order < 2 or max_order > 6:
+        raise ValueError(f"max_order must be 2-6, got {max_order}")
+
+    cumulants = {}
+    for order in range(2, max_order + 1):
+        cumulants[order] = compute_cumulant(images, order)
+
+    K2 = np.maximum(np.abs(cumulants[2]), 1e-10)
+
+    # Balance factor from highest available order
+    n = max_order
+    Kn = np.abs(cumulants[n])
+
+    # b_n = (|K_n| / K_2^(n/2))^(1/(n-2))
+    ratio = Kn / np.power(K2, n / 2)
+    balanced = np.power(np.maximum(ratio, 0), 1.0 / (n - 2))
+
+    # On-time ratio estimation from K2 and K3
+    # For a two-state blinking model: K3/K2^(3/2) is proportional to (1-2*rho)
+    if 3 in cumulants:
+        K3 = cumulants[3]
+        k3_norm = K3 / np.power(K2, 1.5)
+        # rho = 0.5 * (1 - K3_norm / constant)
+        on_ratio = np.clip(0.5 * (1 - k3_norm), 0, 1)
+    else:
+        on_ratio = np.full_like(balanced, 0.5)
+
+    # Brightness from K2 and on_ratio
+    brightness = K2 / (on_ratio * (1 - on_ratio) + 1e-10)
+
+    # Normalize balanced image to [0, 1]
+    bmin, bmax = balanced.min(), balanced.max()
+    if bmax > bmin:
+        balanced = (balanced - bmin) / (bmax - bmin)
+
+    return {
+        'cumulants': {str(k): v for k, v in cumulants.items()},
+        'balanced': balanced,
+        'on_ratio': on_ratio,
+        'brightness': np.sqrt(np.maximum(brightness, 0)),
+    }
+
+
 def compute_sofi_image(
     images: np.ndarray,
     order: int,
