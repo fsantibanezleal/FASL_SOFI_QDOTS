@@ -402,12 +402,20 @@ def compute_cross_cumulant(images: np.ndarray, order: int) -> np.ndarray:
         d01 = delta[:, :-1, 1:]
         d10 = delta[:, 1:, :-1]
         d11 = delta[:, 1:, 1:]
-        # 4th-order cross-cumulant with moment subtraction
-        m4 = np.mean(d00[:-3] * d01[1:-2] * d10[2:-1] * d11[3:], axis=0)
-        m02 = np.mean(d00[:-1] * d01[1:], axis=0)[:d10.shape[1], :d10.shape[2]]
-        m13 = np.mean(d10[:-1] * d11[1:], axis=0)[:m02.shape[0], :m02.shape[1]]
-        # Simplified: subtract dominant cross-terms
-        return m4 - m02 * m13
+        # Align time lags: x0=d00, x1=d01(lag1), x2=d10(lag2), x3=d11(lag3)
+        T4 = min(d00.shape[0], d01.shape[0], d10.shape[0], d11.shape[0]) - 3
+        x0, x1, x2, x3 = d00[:T4], d01[1:T4+1], d10[2:T4+2], d11[3:T4+3]
+
+        m4 = np.mean(x0 * x1 * x2 * x3, axis=0)
+        # All three pair-partitions of {0,1,2,3}
+        m01 = np.mean(x0 * x1, axis=0)
+        m23 = np.mean(x2 * x3, axis=0)
+        m02 = np.mean(x0 * x2, axis=0)
+        m13 = np.mean(x1 * x3, axis=0)
+        m03 = np.mean(x0 * x3, axis=0)
+        m12 = np.mean(x1 * x2, axis=0)
+
+        return m4 - m01*m23 - m02*m13 - m03*m12
 
     return compute_cumulant(images, order)
 
