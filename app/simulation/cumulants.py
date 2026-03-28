@@ -335,7 +335,158 @@ def _cumulant_6(d: np.ndarray) -> np.ndarray:
                 pc = np.mean(dd[c[0]] * dd[c[1]], axis=0)
                 triple_pair += pa * pb * pc
 
+    # The nested loop counts each partition 3 times (once per pair
+    # chosen as "c").  Divide by 3 to get the correct 15 terms.
+    # Bug found by Codex code review on PR #2.
+    triple_pair /= 3
+
     return m6 - pair_quad - triple_triple + 2 * triple_pair
+
+
+def compute_cross_cumulant(images: np.ndarray, order: int) -> np.ndarray:
+    """Cross-cumulant SOFI using neighboring pixel combinations.
+
+    Instead of auto-cumulants at each pixel, combines signals from
+    neighboring pixels to achieve sub-pixel sampling:
+
+        C_n(r_virtual) = cumulant(F(r_1, t), ..., F(r_n, t))
+        where r_virtual = (r_1 + ... + r_n) / n
+
+    This provides n-fold resolution improvement (not just sqrt(n))
+    because the virtual pixel grid is n times finer than the
+    physical pixel grid.
+
+    For order 2: combine each pixel with its right neighbor
+        r_virtual = (r, r+dx) -> virtual pixel at r + dx/2
+    For order 3: combine pixel with right and bottom neighbors
+    For order 4: 2x2 neighborhood
+
+    Args:
+        images: 3D array (T, H, W) of fluorescence frames.
+        order: Cross-cumulant order (2, 3, or 4).
+
+    Returns:
+        2D array of cross-cumulant values. Shape depends on order:
+        - Order 2: (H, W*2-1) with interleaved auto and cross values
+        - Order 3: (H-1, W-1) cross-cumulant map
+        - Order 4: (H-1, W-1) cross-cumulant map
+        For other orders, falls back to standard auto-cumulant.
+    """
+    T, H, W = images.shape
+    mean_img = np.mean(images, axis=0)
+    delta = images - mean_img[np.newaxis, :, :]
+
+    if order == 2:
+        # Cross-cumulant between pixel (i,j) and (i,j+1)
+        # Virtual pixel at (i, j+0.5) -- doubles horizontal resolution
+        d_left = delta[:, :, :-1]   # (T, H, W-1)
+        d_right = delta[:, :, 1:]   # (T, H, W-1)
+        xc = np.mean(d_left[:-1] * d_right[1:], axis=0)
+        # Upscale to 2x width
+        result = np.zeros((H, W * 2 - 1))
+        result[:, 0::2] = compute_cumulant(images, 2)  # auto at original pixels
+        result[:, 1::2] = xc  # cross at virtual pixels
+        return result
+
+    elif order == 3:
+        # 3-pixel cross: (i,j), (i,j+1), (i+1,j)
+        d00 = delta[:, :-1, :-1]
+        d01 = delta[:, :-1, 1:]
+        d10 = delta[:, 1:, :-1]
+        xc = np.mean(d00[:-2] * d01[1:-1] * d10[2:], axis=0)
+        return xc
+
+    elif order == 4:
+        # 2x2 cross: (i,j), (i,j+1), (i+1,j), (i+1,j+1)
+        d00 = delta[:, :-1, :-1]
+        d01 = delta[:, :-1, 1:]
+        d10 = delta[:, 1:, :-1]
+        d11 = delta[:, 1:, 1:]
+        # Align time lags: x0=d00, x1=d01(lag1), x2=d10(lag2), x3=d11(lag3)
+        T4 = min(d00.shape[0], d01.shape[0], d10.shape[0], d11.shape[0]) - 3
+        x0, x1, x2, x3 = d00[:T4], d01[1:T4+1], d10[2:T4+2], d11[3:T4+3]
+
+        m4 = np.mean(x0 * x1 * x2 * x3, axis=0)
+        # All three pair-partitions of {0,1,2,3}
+        m01 = np.mean(x0 * x1, axis=0)
+        m23 = np.mean(x2 * x3, axis=0)
+        m02 = np.mean(x0 * x2, axis=0)
+        m13 = np.mean(x1 * x3, axis=0)
+        m03 = np.mean(x0 * x3, axis=0)
+        m12 = np.mean(x1 * x2, axis=0)
+
+        return m4 - m01*m23 - m02*m13 - m03*m12
+
+    return compute_cumulant(images, order)
+
+
+def compute_bsofi(images: np.ndarray, max_order: int = 4) -> dict:
+    """Balanced SOFI (Geissbuehler et al., 2012).
+
+    Extracts molecular parameters from multiple cumulant orders:
+    - On-time ratio: rho = tau_on / (tau_on + tau_off)
+    - Molecular brightness: epsilon
+    - Concentration map: N(r)
+
+    The balance factor linearizes brightness response:
+        b_n = (|K_n| / K_2^(n/2))^(1/(n-2))
+
+    The balanced image removes cusp artifacts from odd-order cumulants
+    and provides a linear relationship between image intensity and
+    emitter density.
+
+    Args:
+        images: (T, H, W) fluorescence stack.
+        max_order: Maximum cumulant order to compute (2-6).
+
+    Returns:
+        Dictionary with keys:
+        - 'cumulants': dict of order -> cumulant image
+        - 'balanced': the balanced SOFI image
+        - 'on_ratio': estimated on-time ratio map
+        - 'brightness': estimated brightness map
+    """
+    if max_order < 2 or max_order > 6:
+        raise ValueError(f"max_order must be 2-6, got {max_order}")
+
+    cumulants = {}
+    for order in range(2, max_order + 1):
+        cumulants[order] = compute_cumulant(images, order)
+
+    K2 = np.maximum(np.abs(cumulants[2]), 1e-10)
+
+    # Balance factor from highest available order
+    n = max_order
+    Kn = np.abs(cumulants[n])
+
+    # b_n = (|K_n| / K_2^(n/2))^(1/(n-2))
+    ratio = Kn / np.power(K2, n / 2)
+    balanced = np.power(np.maximum(ratio, 0), 1.0 / (n - 2))
+
+    # On-time ratio estimation from K2 and K3
+    # For a two-state blinking model: K3/K2^(3/2) is proportional to (1-2*rho)
+    if 3 in cumulants:
+        K3 = cumulants[3]
+        k3_norm = K3 / np.power(K2, 1.5)
+        # rho = 0.5 * (1 - K3_norm / constant)
+        on_ratio = np.clip(0.5 * (1 - k3_norm), 0, 1)
+    else:
+        on_ratio = np.full_like(balanced, 0.5)
+
+    # Brightness from K2 and on_ratio
+    brightness = K2 / (on_ratio * (1 - on_ratio) + 1e-10)
+
+    # Normalize balanced image to [0, 1]
+    bmin, bmax = balanced.min(), balanced.max()
+    if bmax > bmin:
+        balanced = (balanced - bmin) / (bmax - bmin)
+
+    return {
+        'cumulants': {str(k): v for k, v in cumulants.items()},
+        'balanced': balanced,
+        'on_ratio': on_ratio,
+        'brightness': np.sqrt(np.maximum(brightness, 0)),
+    }
 
 
 def compute_sofi_image(
