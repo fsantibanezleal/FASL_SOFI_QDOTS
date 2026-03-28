@@ -22,7 +22,7 @@ import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel, Field
 
-from ..simulation.emitter_simulator import simulate_blinking_sequence
+from ..simulation.emitter_simulator import simulate_blinking_sequence, generate_ground_truth
 from ..simulation.sofi_pipeline import SOFIPipeline
 from ..simulation.cumulants import compute_sofi_image
 
@@ -162,6 +162,12 @@ async def simulate(params: SimulationParams):
     mean_b64 = _image_to_base64(app_state.mean_image)
     H, W = app_state.mean_image.shape
 
+    # Generate ground truth image (emitters convolved with PSF, no noise)
+    ground_truth = generate_ground_truth(
+        positions, (H, W), params.psf_sigma, params.brightness
+    )
+    gt_b64 = _image_to_base64(ground_truth)
+
     return {
         "status": "ok",
         "num_frames": int(images.shape[0]),
@@ -170,6 +176,8 @@ async def simulate(params: SimulationParams):
         "elapsed_seconds": round(elapsed, 3),
         "mean_image": mean_b64,
         "mean_shape": [H, W],
+        "ground_truth": gt_b64,
+        "ground_truth_shape": [H, W],
         "positions": positions.tolist(),
     }
 
