@@ -15,16 +15,19 @@ import asyncio
 import base64
 import io
 import json
+import os
+import tempfile
 import time
 from typing import Dict, List, Optional, Any
 
 import numpy as np
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 
 from ..simulation.emitter_simulator import simulate_blinking_sequence, generate_ground_truth
 from ..simulation.sofi_pipeline import SOFIPipeline
 from ..simulation.cumulants import compute_sofi_image
+from ..simulation.tiff_loader import load_tiff_stack
 
 
 # --------------- Pydantic Models ---------------
@@ -258,6 +261,67 @@ async def get_state():
         processed_orders=list(app_state.sofi_results.keys()),
         simulation_params=app_state.simulation_params,
     )
+
+
+@router.post("/api/upload-tiff")
+async def upload_tiff(file: UploadFile = File(...)):
+    """Upload a TIFF stack for SOFI processing.
+
+    Accepts a .tif or .tiff file, loads it as a 3D image stack, and
+    stores it in the application state for subsequent processing via
+    the /api/process endpoint.
+
+    Returns metadata about the loaded stack and its mean image.
+    """
+    if file.filename and not file.filename.lower().endswith((".tif", ".tiff")):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be a TIFF (.tif or .tiff) file.",
+        )
+
+    # Save to a temporary file so tifffile/Pillow can read it
+    try:
+        content = await file.read()
+        with tempfile.NamedTemporaryFile(suffix=".tiff", delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        images = load_tiff_stack(tmp_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to load TIFF: {e}")
+    finally:
+        # Clean up temp file
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+
+    # Store in application state
+    app_state.images = images
+    app_state.positions = None
+    app_state.mean_image = np.mean(images, axis=0)
+    app_state.sofi_results = {}
+    app_state.simulation_params = {
+        "source": "tiff_upload",
+        "filename": file.filename,
+        "num_frames": int(images.shape[0]),
+        "image_size": [int(images.shape[1]), int(images.shape[2])],
+    }
+
+    mean_b64 = _image_to_base64(app_state.mean_image)
+    H, W = app_state.mean_image.shape
+
+    return {
+        "status": "ok",
+        "source": "tiff_upload",
+        "filename": file.filename,
+        "num_frames": int(images.shape[0]),
+        "image_size": [int(images.shape[1]), int(images.shape[2])],
+        "dtype": str(images.dtype),
+        "value_range": [float(images.min()), float(images.max())],
+        "mean_image": mean_b64,
+        "mean_shape": [H, W],
+    }
 
 
 @router.websocket("/ws")
