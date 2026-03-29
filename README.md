@@ -140,6 +140,8 @@ FASL_SOFI_QDOTS/
 │   │   ├── psf.py                       # PSF models (Gaussian, Airy, effective)
 │   │   ├── deconvolution.py             # Wiener + Richardson-Lucy deconvolution
 │   │   ├── fourier_interpolation.py     # Sub-pixel Fourier upsampling
+│   │   ├── mssr.py                      # Mean-Shift Super-Resolution processing
+│   │   ├── tiff_loader.py              # TIFF microscopy image I/O
 │   │   └── sofi_pipeline.py             # Pipeline orchestrator (3 processing modes)
 │   └── static/
 │       ├── index.html                   # Main frontend page
@@ -153,16 +155,25 @@ FASL_SOFI_QDOTS/
 │   ├── __init__.py
 │   ├── test_cumulants.py                # Cumulant computation validation
 │   ├── test_emitter.py                  # Blinking simulator tests
+│   ├── test_mssr.py                     # MSSR processing tests
 │   └── test_pipeline.py                 # End-to-end pipeline tests
 ├── docs/
 │   ├── architecture.md                  # System design documentation
 │   ├── sofi_theory.md                   # Exhaustive mathematical foundation
 │   ├── development_history.md           # Project evolution log
 │   ├── references.md                    # 20+ academic references
+│   ├── png/
+│   │   ├── frontend_base.png            # Frontend screenshot (base view)
+│   │   └── frontend_outs.png            # Frontend screenshot (output view)
 │   └── svg/
 │       ├── architecture.svg             # System architecture diagram
 │       ├── sofi_pipeline.svg            # Processing pipeline flowchart
-│       └── cumulant_orders.svg          # Cumulant order comparison
+│       ├── cumulant_orders.svg          # Cumulant order comparison
+│       ├── cumulant_vs_moment.svg       # Cumulant vs moment diagram
+│       └── sofi_vs_palm.svg             # SOFI vs PALM/STORM comparison
+├── build.spec                           # PyInstaller spec file
+├── Build_PyInstaller.ps1                # PowerShell build script
+├── run_app.py                           # Uvicorn launcher with auto-browser
 ├── requirements.txt                     # Python dependencies
 └── __init__.py
 ```
@@ -276,6 +287,12 @@ Tests include:
 5. Kuno, M. et al. (2001). Fluorescence intermittency in single InP quantum dots. *JCP*, 115:1028.
 6. Richardson, W.H. (1972). Bayesian-Based Iterative Method of Image Restoration. *JOSA*, 62(1):55-59.
 7. Lucy, L.B. (1974). An iterative technique for the rectification of observed distributions. *AJ*, 79:745-754.
+
+## Port
+
+**8007** -- http://localhost:8007
+
+---
 
 ## License
 
