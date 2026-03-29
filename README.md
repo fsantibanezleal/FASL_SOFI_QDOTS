@@ -23,19 +23,21 @@ Conventional microscopy is limited by diffraction to ~250nm resolution. SOFI bre
 | Speed vs PALM/STORM | ~1000 frames (SOFI) vs ~10000 frames (localization methods) |
 | Single-frame mode | MSSR achieves ~1.5x from ONE frame (real-time capable) |
 
-## Project Metrics & Status
+## SOFI Pipeline
 
-| Metric | Status |
-|--------|--------|
-| Tests | 38+ passing |
-| Cumulant orders | 2-6 with verified partition formulas |
-| MSSR | Order 1 and 2, single-frame and temporal |
-| QDot simulator | Power-law blinking P(t) ∝ t^(−α) |
-| File formats | TIFF stack import (tifffile + Pillow) |
+![SOFI Pipeline](docs/svg/sofi_pipeline.svg)
 
 ---
 
-## Mathematical Foundation
+## Frontend
+
+![Frontend Base](docs/png/frontend_base.png)
+
+![Frontend Outputs](docs/png/frontend_outs.png)
+
+---
+
+## Technical Approach — Cumulant Super-Resolution
 
 ### Fluorescence Signal Model — Superposition of Blinking Emitters
 The observed fluorescence at each pixel is the sum of all quantum dot contributions, each convolved with the microscope's diffraction-limited point spread function:
@@ -106,20 +108,6 @@ where **α ≈ 1.5** is the power-law exponent governing the probability of long
 
 ---
 
-## SOFI Pipeline
-
-![SOFI Pipeline](docs/svg/sofi_pipeline.svg)
-
----
-
-## Frontend
-
-![Frontend Base](docs/png/frontend_base.png)
-
-![Frontend Outputs](docs/png/frontend_outs.png)
-
----
-
 ## Architecture
 
 ![Architecture](docs/svg/architecture.svg)
@@ -137,6 +125,16 @@ where **α ≈ 1.5** is the power-law exponent governing the probability of long
 - **Web-based UI** with HTML5 Canvas rendering, colormap support, and real-time progress
 - **WebSocket** streaming for live progress updates during computation
 - **Swagger/ReDoc** auto-generated API documentation
+
+## Project Metrics & Status
+
+| Metric | Status |
+|--------|--------|
+| Tests | 38+ passing |
+| Cumulant orders | 2-6 with verified partition formulas |
+| MSSR | Order 1 and 2, single-frame and temporal |
+| QDot simulator | Power-law blinking P(t) ∝ t^(−α) |
+| File formats | TIFF stack import (tifffile + Pillow) |
 
 ---
 
