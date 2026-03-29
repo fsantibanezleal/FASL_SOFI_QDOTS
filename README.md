@@ -1,40 +1,16 @@
 # FASL SOFI QDOTS -- Super-Resolution Optical Fluctuation Imaging
 
-![Architecture](docs/svg/architecture.svg)
-
-## Overview
-
 Super-resolution Optical Fluctuation Imaging (SOFI) extracts sub-diffraction spatial information from temporal fluorescence fluctuations of independently blinking quantum dot (QDot) emitters. Unlike single-molecule localization methods (PALM/STORM) that require extreme emitter sparsity, SOFI operates on dense labeling by exploiting higher-order statistical cumulants of intensity time traces.
 
 The nth-order cumulant of the fluorescence signal narrows the effective point spread function (PSF) by a factor of sqrt(n), achieving super-resolution without hardware modifications. This web application provides a complete SOFI processing pipeline -- from synthetic QDot blinking simulation to cumulant computation, Fourier interpolation, and deconvolution -- all accessible through a browser-based interface.
 
-![SOFI Pipeline](docs/svg/sofi_pipeline.svg)
+---
 
-## Frontend
+## Motivation & Problem
 
-![Frontend Base](docs/png/frontend_base.png)
+Conventional microscopy is limited by diffraction to ~250nm resolution. SOFI breaks this limit by exploiting stochastic blinking of quantum dots — computing higher-order cumulants narrows the PSF by factor sqrt(n), achieving sub-diffraction resolution from standard widefield hardware.
 
-![Frontend Outputs](docs/png/frontend_outs.png)
-
-## Quick Start
-
-```bash
-# Clone and enter the project
-cd FASL_SOFI_QDOTS
-
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/Scripts/activate   # Windows
-# source .venv/bin/activate     # Linux / macOS
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Launch the server
-python -m uvicorn app.main:app --port 8007
-```
-
-Open **http://localhost:8007** in your browser. The interactive Swagger docs are at `/docs` and ReDoc at `/redoc`.
+---
 
 ## Mathematical Foundation
 
@@ -111,6 +87,28 @@ P(t_off) ~ t^(-alpha_off)     alpha_off ~ 1.5
 
 Sampled via the inverse CDF method: `t = t_min * (1 - u)^(-1/(alpha - 1))` where `u ~ Uniform(0, 1)`.
 
+---
+
+## SOFI Pipeline
+
+![SOFI Pipeline](docs/svg/sofi_pipeline.svg)
+
+---
+
+## Frontend
+
+![Frontend Base](docs/png/frontend_base.png)
+
+![Frontend Outputs](docs/png/frontend_outs.png)
+
+---
+
+## Architecture
+
+![Architecture](docs/svg/architecture.svg)
+
+---
+
 ## Features
 
 - **Cumulant computation** (orders 2--6) with correct moment-cumulant partition relations
@@ -122,6 +120,47 @@ Sampled via the inverse CDF method: `t = t_min * (1 - u)^(-1/(alpha - 1))` where
 - **Web-based UI** with HTML5 Canvas rendering, colormap support, and real-time progress
 - **WebSocket** streaming for live progress updates during computation
 - **Swagger/ReDoc** auto-generated API documentation
+
+---
+
+## Quick Start
+
+```bash
+# Clone and enter the project
+cd FASL_SOFI_QDOTS
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/Scripts/activate   # Windows
+# source .venv/bin/activate     # Linux / macOS
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch the server
+python -m uvicorn app.main:app --port 8007
+```
+
+Open **http://localhost:8007** in your browser. The interactive Swagger docs are at `/docs` and ReDoc at `/redoc`.
+
+### Running Tests
+
+```bash
+# Individual test modules
+python tests/test_cumulants.py
+python tests/test_pipeline.py
+python tests/test_emitter.py
+
+# Or run all tests
+python -m pytest tests/ -v
+```
+
+Tests include:
+- Statistical validation of cumulant formulas against known distributions
+- End-to-end pipeline execution with resolution verification
+- Emitter blinking statistics (power-law exponent validation)
+
+---
 
 ## Project Structure
 
@@ -177,6 +216,8 @@ FASL_SOFI_QDOTS/
 ├── requirements.txt                     # Python dependencies
 └── __init__.py
 ```
+
+---
 
 ## API Documentation
 
@@ -242,22 +283,20 @@ result = pipeline.process(image_stack)
 # result.deconvolved_images   -- deconvolution intermediates
 ```
 
-## Running Tests
+---
 
-```bash
-# Individual test modules
-python tests/test_cumulants.py
-python tests/test_pipeline.py
-python tests/test_emitter.py
+## Port
 
-# Or run all tests
-python -m pytest tests/ -v
-```
+**8007** -- http://localhost:8007
 
-Tests include:
-- Statistical validation of cumulant formulas against known distributions
-- End-to-end pipeline execution with resolution verification
-- Emitter blinking statistics (power-law exponent validation)
+---
+
+## Documentation
+
+- [SOFI Theory](docs/sofi_theory.md) -- Exhaustive mathematical foundation with derivations
+- [System Architecture](docs/architecture.md) -- Component design and data flow
+- [Development History](docs/development_history.md) -- Project evolution and decisions
+- [References](docs/references.md) -- 20+ academic references (Dertinger, Geissbuehler, Basak, etc.)
 
 ## Tech Stack
 
@@ -271,12 +310,7 @@ Tests include:
 - **HTML5 Canvas** -- Frontend image rendering with colormaps
 - **WebSocket** -- Real-time progress streaming
 
-## Documentation
-
-- [SOFI Theory](docs/sofi_theory.md) -- Exhaustive mathematical foundation with derivations
-- [System Architecture](docs/architecture.md) -- Component design and data flow
-- [Development History](docs/development_history.md) -- Project evolution and decisions
-- [References](docs/references.md) -- 20+ academic references (Dertinger, Geissbuehler, Basak, etc.)
+---
 
 ## References
 
@@ -287,10 +321,6 @@ Tests include:
 5. Kuno, M. et al. (2001). Fluorescence intermittency in single InP quantum dots. *JCP*, 115:1028.
 6. Richardson, W.H. (1972). Bayesian-Based Iterative Method of Image Restoration. *JOSA*, 62(1):55-59.
 7. Lucy, L.B. (1974). An iterative technique for the rectification of observed distributions. *AJ*, 79:745-754.
-
-## Port
-
-**8007** -- http://localhost:8007
 
 ---
 
