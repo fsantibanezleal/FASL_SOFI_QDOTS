@@ -27,7 +27,7 @@ Comprehensive rewrite from MATLAB to a modern Python 3.12 / FastAPI web applicat
    +-- sofi_pipeline.py      (orchestration)
 ```
 
-> See `docs/diagrams/architecture.svg` for visual reference.
+> See `docs/svg/architecture.svg` for visual reference.
 
 ### Mathematical Model
 
