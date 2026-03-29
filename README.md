@@ -10,6 +10,20 @@ The nth-order cumulant of the fluorescence signal narrows the effective point sp
 
 Conventional microscopy is limited by diffraction to ~250nm resolution. SOFI breaks this limit by exploiting stochastic blinking of quantum dots — computing higher-order cumulants narrows the PSF by factor sqrt(n), achieving sub-diffraction resolution from standard widefield hardware.
 
+![SOFI Pipeline](docs/svg/sofi_pipeline.svg)
+
+---
+
+## KPIs & Metrics
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| Resolution gain | √n per cumulant order | √2=1.41x (order 2) to √6=2.45x (order 6) |
+| Cumulant orders | 2-6 with correct partitions | All implemented, 6th-order verified |
+| MSSR single-frame | ~1.5-2x from 1 frame | Order 1 and 2 implemented |
+| QDot simulator | Power-law blinking | P(t) ∝ t^(−α), α≈1.5 |
+| Test coverage | Comprehensive | 38+ tests passing |
+
 ---
 
 ## Mathematical Foundation
