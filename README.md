@@ -308,10 +308,16 @@ result = pipeline.process(image_stack)
 
 ## Documentation
 
+- [User Guide](docs/user_guide.md) -- Operator-focused walkthrough, recipes, troubleshooting
 - [SOFI Theory](docs/sofi_theory.md) -- Exhaustive mathematical foundation with derivations
 - [System Architecture](docs/architecture.md) -- Component design and data flow
 - [Development History](docs/development_history.md) -- Project evolution and decisions
 - [References](docs/references.md) -- 20+ academic references (Dertinger, Geissbuehler, Basak, etc.)
+
+### Domain diagrams
+
+- [Optical setup](docs/svg/optical_setup.svg) -- Widefield 532 nm / NA 1.4 / sCMOS layout with physical scales
+- [Fluctuation analysis](docs/svg/fluctuation_analysis.svg) -- From blinking trace to lagged products to cumulant map
 
 ## Tech Stack
 
