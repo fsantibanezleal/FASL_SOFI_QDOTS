@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 
+from . import __version__
 from .api.routes import router
 
 # Application metadata
@@ -32,7 +33,7 @@ app = FastAPI(
         "Simulates quantum dot blinking and computes cumulant-based "
         "super-resolution images (orders 2-6)."
     ),
-    version="2.0.0",
+    version=__version__,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -53,5 +54,21 @@ async def root():
 
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
-    return {"status": "ok", "service": "FASL SOFI QDOTS", "version": "2.0.0"}
+    """Health check endpoint.
+
+    Returns a small JSON payload suitable for load-balancer / uptime probes.
+    Version is sourced from ``app.__version__`` so there is a single source
+    of truth for the deployed build.
+    """
+    return {"status": "ok", "service": "FASL SOFI QDOTS", "version": __version__}
+
+
+@app.get("/api/version")
+async def api_version():
+    """Application version endpoint.
+
+    Dedicated version probe for deployment tooling (cPanel Passenger,
+    systemd, CI). Returns the same ``__version__`` as ``/health`` so
+    smoke tests can pin a specific release.
+    """
+    return {"version": __version__, "service": "FASL SOFI QDOTS"}
