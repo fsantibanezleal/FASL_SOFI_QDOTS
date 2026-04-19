@@ -91,3 +91,12 @@ Images are transferred as base64-encoded float32 arrays with shape metadata. The
 ## Port Configuration
 
 The application runs on port **8007** by default.
+
+## Related Documents
+
+- `docs/user_guide.md` — end-user walkthrough, recipes, troubleshooting
+- `docs/deployment.md` — cPanel Passenger, Uvicorn + Nginx, systemd, static caching
+- `docs/sofi_theory.md` — mathematical foundation (cumulants, moments, bSOFI)
+- `docs/references.md` — primary literature (Dertinger, Geissbuehler, Basak, ...)
+- `docs/svg/optical_setup.svg` — widefield microscope diagram with physical scales
+- `docs/svg/fluctuation_analysis.svg` — trace → lagged products → cumulant map

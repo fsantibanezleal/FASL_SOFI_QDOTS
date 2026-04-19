@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="900" height="460" fill="#fafafa"/>
+  <text x="450" y="28" text-anchor="middle" font-size="18" font-weight="700">Fluctuation Analysis — From Blinking Trace to Cumulant Image</text>
+
+  <!-- Panel A: blinking trace -->
+  <g transform="translate(40,60)">
+    <rect width="260" height="160" fill="#fff" stroke="#ccc"/>
+    <text x="130" y="-8" text-anchor="middle" font-weight="700">A. Intensity trace F(r₀, t)</text>
+    <!-- axes -->
+    <line x1="20" y1="140" x2="250" y2="140" stroke="#333"/>
+    <line x1="20" y1="20"  x2="20"  y2="140" stroke="#333"/>
+    <text x="250" y="155" font-size="10" text-anchor="end">t (frames)</text>
+    <text x="10"  y="25"  font-size="10">F</text>
+    <!-- telegraph-like trace -->
+    <polyline fill="none" stroke="#1f6feb" stroke-width="1.6"
+      points="20,110 40,110 40,40 70,40 70,115 95,115 95,45 125,45 125,112 150,112 150,40 175,40 175,115 205,115 205,48 235,48 235,110 250,110"/>
+    <!-- mean -->
+    <line x1="20" y1="80" x2="250" y2="80" stroke="#7e57c2" stroke-dasharray="4 4"/>
+    <text x="250" y="78" font-size="10" text-anchor="end" fill="#7e57c2">⟨F⟩</text>
+  </g>
+
+  <!-- arrow -->
+  <line x1="310" y1="140" x2="355" y2="140" stroke="#333" stroke-width="2" marker-end="url(#arr2)"/>
+  <text x="332" y="130" font-size="11" text-anchor="middle">δF = F−⟨F⟩</text>
+
+  <!-- Panel B: centered trace + lagged products -->
+  <g transform="translate(360,60)">
+    <rect width="260" height="160" fill="#fff" stroke="#ccc"/>
+    <text x="130" y="-8" text-anchor="middle" font-weight="700">B. Lagged products δF(t)·δF(t+τ)</text>
+    <line x1="20" y1="80" x2="250" y2="80" stroke="#333"/>
+    <text x="250" y="95" font-size="10" text-anchor="end">t</text>
+    <text x="12"  y="25" font-size="10">δF·δF</text>
+    <!-- bars above and below zero -->
+    <g fill="#4cc38a" stroke="#2a7f4e">
+      <rect x="30"  y="50" width="10" height="30"/>
+      <rect x="55"  y="30" width="10" height="50"/>
+      <rect x="80"  y="40" width="10" height="40"/>
+      <rect x="105" y="60" width="10" height="20"/>
+      <rect x="155" y="35" width="10" height="45"/>
+      <rect x="180" y="50" width="10" height="30"/>
+      <rect x="230" y="45" width="10" height="35"/>
+    </g>
+    <g fill="#e24a4a" stroke="#7a0b0b">
+      <rect x="130" y="80" width="10" height="25"/>
+      <rect x="205" y="80" width="10" height="15"/>
+    </g>
+    <text x="130" y="150" text-anchor="middle" font-size="11">positive products from correlated fluctuations</text>
+  </g>
+
+  <line x1="630" y1="140" x2="675" y2="140" stroke="#333" stroke-width="2" marker-end="url(#arr2)"/>
+  <text x="652" y="130" font-size="11" text-anchor="middle">⟨ ⟩_t</text>
+
+  <!-- Panel C: cumulant image -->
+  <g transform="translate(680,60)">
+    <rect width="180" height="160" fill="#fff" stroke="#ccc"/>
+    <text x="90" y="-8" text-anchor="middle" font-weight="700">C. C_n(r) map</text>
+    <!-- heatmap mock: small grid -->
+    <g>
+      <rect x="15"  y="15" width="150" height="130" fill="#111"/>
+      <circle cx="55"  cy="55"  r="22" fill="#ffcf33" opacity="0.85"/>
+      <circle cx="120" cy="70"  r="18" fill="#ff8a33" opacity="0.85"/>
+      <circle cx="90"  cy="110" r="15" fill="#ff5c33" opacity="0.85"/>
+    </g>
+    <text x="90" y="158" text-anchor="middle" font-size="10">PSF narrowed by √n</text>
+  </g>
+
+  <!-- Formula row -->
+  <g transform="translate(40,260)">
+    <rect width="820" height="60" rx="8" fill="#eef3ff" stroke="#1f6feb"/>
+    <text x="20" y="25" font-weight="700">Auto-cumulant (order n, consecutive lags):</text>
+    <text x="20" y="48" font-family="Consolas, monospace">
+      C_n(r) = κ_n[ F(r, t), F(r, t+1), …, F(r, t+n−1) ] = Σ_k ε_k^n · κ_n[s_k] · U^n(r − r_k)
+    </text>
+  </g>
+
+  <!-- Order comparison row -->
+  <g transform="translate(40,340)">
+    <text x="0" y="15" font-weight="700">Order progression — effective PSF σ_eff = σ_PSF / √n</text>
+    <g font-size="11">
+      <rect x="0"   y="30" width="140" height="90" fill="#fff" stroke="#ccc"/>
+      <text x="70"  y="48" text-anchor="middle" font-weight="700">n = 2</text>
+      <circle cx="70" cy="82" r="26" fill="#4cc38a" opacity="0.7"/>
+      <text x="70" y="108" text-anchor="middle">√2× gain — unresolved blob shrinks</text>
+
+      <rect x="160" y="30" width="140" height="90" fill="#fff" stroke="#ccc"/>
+      <text x="230" y="48" text-anchor="middle" font-weight="700">n = 3</text>
+      <circle cx="230" cy="82" r="20" fill="#4cc38a" opacity="0.75"/>
+      <text x="230" y="108" text-anchor="middle">asymmetric, signed</text>
+
+      <rect x="320" y="30" width="140" height="90" fill="#fff" stroke="#ccc"/>
+      <text x="390" y="48" text-anchor="middle" font-weight="700">n = 4</text>
+      <circle cx="370" cy="82" r="12" fill="#4cc38a" opacity="0.85"/>
+      <circle cx="410" cy="82" r="12" fill="#4cc38a" opacity="0.85"/>
+      <text x="390" y="108" text-anchor="middle">two emitters resolved (2× gain)</text>
+
+      <rect x="480" y="30" width="140" height="90" fill="#fff" stroke="#ccc"/>
+      <text x="550" y="48" text-anchor="middle" font-weight="700">n = 6</text>
+      <circle cx="530" cy="82" r="8" fill="#4cc38a" opacity="0.9"/>
+      <circle cx="560" cy="82" r="8" fill="#4cc38a" opacity="0.9"/>
+      <circle cx="545" cy="100" r="7" fill="#4cc38a" opacity="0.9"/>
+      <text x="550" y="120" text-anchor="middle">√6× gain, high-SNR only</text>
+
+      <rect x="640" y="30" width="180" height="90" fill="#fff" stroke="#ccc"/>
+      <text x="730" y="48" text-anchor="middle" font-weight="700">+ SOFIX (deconv.)</text>
+      <circle cx="705" cy="82" r="5" fill="#ffcf33"/>
+      <circle cx="735" cy="82" r="5" fill="#ffcf33"/>
+      <circle cx="720" cy="102" r="4" fill="#ffcf33"/>
+      <text x="730" y="118" text-anchor="middle">full n× gain (Fourier + Wiener / R-L)</text>
+    </g>
+  </g>
+</svg>
