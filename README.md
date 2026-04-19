@@ -241,11 +241,13 @@ FASL_SOFI_QDOTS/
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/` | Serve the frontend application |
-| `GET` | `/health` | Health check (`{"status": "ok", "version": "2.0.0"}`) |
+| `GET` | `/health` | Health check (`{"status": "ok", "version": "<app version>"}`, sourced from `app.__version__`) |
+| `GET` | `/api/version` | Version probe (`{"version": "<app version>", "service": "FASL SOFI QDOTS"}`) |
 | `GET` | `/docs` | Swagger UI (auto-generated) |
 | `GET` | `/redoc` | ReDoc documentation |
 | `POST` | `/api/simulate` | Generate synthetic blinking data |
 | `POST` | `/api/process` | Run SOFI cumulant pipeline |
+| `POST` | `/api/upload-tiff` | Upload a TIFF stack for processing |
 | `GET` | `/api/state` | Current application state |
 
 ### WebSocket
@@ -308,10 +310,17 @@ result = pipeline.process(image_stack)
 
 ## Documentation
 
+- [User Guide](docs/user_guide.md) -- Operator-focused walkthrough, recipes, troubleshooting
+- [Deployment](docs/deployment.md) -- cPanel Passenger, Uvicorn + Nginx, systemd, static caching
 - [SOFI Theory](docs/sofi_theory.md) -- Exhaustive mathematical foundation with derivations
 - [System Architecture](docs/architecture.md) -- Component design and data flow
 - [Development History](docs/development_history.md) -- Project evolution and decisions
 - [References](docs/references.md) -- 20+ academic references (Dertinger, Geissbuehler, Basak, etc.)
+
+### Domain diagrams
+
+- [Optical setup](docs/svg/optical_setup.svg) -- Widefield 532 nm / NA 1.4 / sCMOS layout with physical scales
+- [Fluctuation analysis](docs/svg/fluctuation_analysis.svg) -- From blinking trace to lagged products to cumulant map
 
 ## Tech Stack
 
