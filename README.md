@@ -247,7 +247,8 @@ FASL_SOFI_QDOTS/
 | `GET` | `/redoc` | ReDoc documentation |
 | `POST` | `/api/simulate` | Generate synthetic blinking data |
 | `POST` | `/api/process` | Run SOFI cumulant pipeline |
-| `POST` | `/api/upload-tiff` | Upload a TIFF stack for processing |
+| `POST` | `/api/upload` | Upload a TIFF stack (size-capped + dtype-validated). Size cap: env `SOFI_MAX_UPLOAD_MB` (default 100 MB) -> 413 on overflow. Accepted authored dtypes: `uint16`, `float32`, `float64` -> 415 otherwise. |
+| `POST` | `/api/upload-tiff` | Legacy TIFF upload (no size cap / dtype validation; retained for backward compat) |
 | `GET` | `/api/state` | Current application state |
 
 ### WebSocket
