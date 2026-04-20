@@ -336,6 +336,168 @@ async def get_state():
     )
 
 
+# Upload size cap: default 100 MB, overridable via env var.
+# The cap is read on each request so tests can adjust it without restarting the app.
+_DEFAULT_MAX_UPLOAD_MB = 100
+_ALLOWED_AUTHORED_DTYPES = {"uint16", "float32", "float64"}
+
+
+def _get_max_upload_bytes() -> int:
+    """Return the current upload cap in bytes.
+
+    Reads ``SOFI_MAX_UPLOAD_MB`` on every call so operators can tune it
+    via environment variable and so tests can monkeypatch the limit
+    without restarting the FastAPI app.
+    """
+    try:
+        mb = int(os.environ.get("SOFI_MAX_UPLOAD_MB", _DEFAULT_MAX_UPLOAD_MB))
+    except ValueError:
+        mb = _DEFAULT_MAX_UPLOAD_MB
+    return max(1, mb) * 1024 * 1024
+
+
+async def _stream_upload_to_tempfile(file: UploadFile, max_bytes: int) -> str:
+    """Stream an UploadFile to a temp file, aborting if it exceeds ``max_bytes``.
+
+    Returns the temp-file path. Raises HTTP 413 before fully buffering when
+    the upload crosses the cap, so oversized files never materialize in RAM
+    as a single buffer.
+    """
+    bytes_read = 0
+    chunk_size = 1024 * 1024  # 1 MB
+    tmp = tempfile.NamedTemporaryFile(suffix=".tiff", delete=False)
+    tmp_path = tmp.name
+    try:
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            bytes_read += len(chunk)
+            if bytes_read > max_bytes:
+                tmp.close()
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
+                raise HTTPException(
+                    status_code=413,
+                    detail=(
+                        f"Upload exceeds size cap of {max_bytes // (1024 * 1024)} MB. "
+                        "Raise SOFI_MAX_UPLOAD_MB to allow larger files."
+                    ),
+                )
+            tmp.write(chunk)
+        tmp.close()
+        return tmp_path
+    except HTTPException:
+        raise
+    except Exception:
+        tmp.close()
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+        raise
+
+
+def _authored_tiff_dtype(path: str) -> Optional[str]:
+    """Return the original dtype name stored in the TIFF, if readable.
+
+    ``load_tiff_stack`` promotes to float64 so we cannot recover the
+    authored dtype from the loaded array. We inspect the file directly
+    via ``tifffile`` when available; if tifffile is absent, returns None
+    and callers treat the upload as dtype-unknown (accepted).
+    """
+    try:
+        import tifffile
+    except ImportError:
+        return None
+    try:
+        with tifffile.TiffFile(path) as tf:
+            if not tf.pages:
+                return None
+            return str(np.dtype(tf.pages[0].dtype).name)
+    except Exception:
+        return None
+
+
+@router.post("/api/upload")
+async def upload_tiff_stack(file: UploadFile = File(...)):
+    """Upload a TIFF stack for SOFI processing (size-capped + dtype-validated).
+
+    Accepts a ``.tif`` / ``.tiff`` file, enforces the configurable size cap
+    (``SOFI_MAX_UPLOAD_MB``, default 100 MB), validates the authored dtype
+    (``uint16`` / ``float32`` / ``float64`` only), loads the stack via
+    ``tiff_loader.load_tiff_stack`` and stores it in ``app_state`` so
+    ``/api/process`` can consume it immediately.
+
+    Returns metadata plus a base64 mean image for the frontend.
+
+    Error codes:
+        - 400: filename extension not .tif/.tiff or the file cannot be decoded
+        - 413: upload exceeds ``SOFI_MAX_UPLOAD_MB``
+        - 415: authored dtype is not one of ``uint16`` / ``float32`` / ``float64``
+    """
+    if file.filename and not file.filename.lower().endswith((".tif", ".tiff")):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be a TIFF (.tif or .tiff) file.",
+        )
+
+    max_bytes = _get_max_upload_bytes()
+    tmp_path = await _stream_upload_to_tempfile(file, max_bytes)
+
+    try:
+        authored_dtype = _authored_tiff_dtype(tmp_path)
+        if authored_dtype is not None and authored_dtype not in _ALLOWED_AUTHORED_DTYPES:
+            raise HTTPException(
+                status_code=415,
+                detail=(
+                    f"Unsupported TIFF dtype '{authored_dtype}'. "
+                    f"Expected one of {sorted(_ALLOWED_AUTHORED_DTYPES)}."
+                ),
+            )
+
+        try:
+            images = load_tiff_stack(tmp_path)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to load TIFF: {e}")
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+
+    # Store in application state (same semantics as /api/upload-tiff).
+    app_state.images = images
+    app_state.positions = None
+    app_state.mean_image = np.mean(images, axis=0)
+    app_state.sofi_results = {}
+    app_state.simulation_params = {
+        "source": "upload",
+        "filename": file.filename,
+        "num_frames": int(images.shape[0]),
+        "image_size": [int(images.shape[1]), int(images.shape[2])],
+        "dtype": authored_dtype or str(images.dtype),
+    }
+
+    mean_b64 = _image_to_base64(app_state.mean_image)
+    H, W = app_state.mean_image.shape
+
+    return {
+        "status": "ok",
+        "source": "upload",
+        "filename": file.filename,
+        "frames": int(images.shape[0]),
+        "height": int(images.shape[1]),
+        "width": int(images.shape[2]),
+        "dtype": authored_dtype or str(images.dtype),
+        "value_range": [float(images.min()), float(images.max())],
+        "mean_image": mean_b64,
+        "mean_shape": [H, W],
+    }
+
+
 @router.post("/api/upload-tiff")
 async def upload_tiff(file: UploadFile = File(...)):
     """Upload a TIFF stack for SOFI processing.

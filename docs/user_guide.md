@@ -153,6 +153,7 @@ A passing suite is the minimum pre-commit gate.
 
 - `POST /api/simulate` → `{ "frames": [...], "mean_image": [...], "shape": [T,H,W] }`
 - `POST /api/process`  → `{ "cumulant_images": {...}, "sofi_images": {...} }`
+- `POST /api/upload`   → multipart TIFF upload; 413 over `SOFI_MAX_UPLOAD_MB` (default 100 MB); 415 for authored dtypes other than `uint16` / `float32` / `float64`. Align Nginx `client_max_body_size` with the cap (see `docs/deployment.md`).
 - `GET  /api/state`    → current simulation + processing parameters
 - `WS   /ws`           → `{ "type": "progress", "step": "...", "progress": 0.0–1.0 }`
 
