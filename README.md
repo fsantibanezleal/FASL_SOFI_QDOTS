@@ -1,5 +1,8 @@
 # FASL SOFI QDOTS -- Super-Resolution Optical Fluctuation Imaging
 
+[![License](https://img.shields.io/github/license/fsantibanezleal/FASL_SOFI_QDOTS)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://sofi.fasl-work.com)
+
 Super-resolution Optical Fluctuation Imaging (SOFI) extracts sub-diffraction spatial information from temporal fluorescence fluctuations of independently blinking quantum dot (QDot) emitters. Unlike single-molecule localization methods (PALM/STORM) that require extreme emitter sparsity, SOFI operates on dense labeling by exploiting higher-order statistical cumulants of intensity time traces.
 
 The nth-order cumulant of the fluorescence signal narrows the effective point spread function (PSF) by a factor of sqrt(n), achieving super-resolution without hardware modifications. This web application provides a complete SOFI processing pipeline -- from synthetic QDot blinking simulation to cumulant computation, Fourier interpolation, and deconvolution -- all accessible through a browser-based interface.
